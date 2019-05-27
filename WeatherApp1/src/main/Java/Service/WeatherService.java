@@ -2,6 +2,7 @@ package Service;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -24,11 +25,24 @@ public class WeatherService implements Callable<Map<String, Object>> {
 
     public Map<String, Object> call() {
 
-        // call open weather api end point
-        String responseEntity = restTemplate.getForObject(uri, String.class);
-
+        String responseEntity = null;
         // map to store the end result
         Map<String, Object> map = new HashMap<String, Object>();
+
+        // call open weather api end point
+        try {
+             responseEntity = restTemplate.getForObject(uri, String.class);
+        }
+        catch (final HttpClientErrorException e) {
+            System.out.println(e.getStatusCode());
+            System.out.println(e.getResponseBodyAsString());
+            map.put("status", "false");
+            map.put("Error",e.getResponseBodyAsString());
+            status = true;
+            return map;
+        }
+        System.out.println("Response :"+responseEntity);
+
 
         JSONObject weatheResponseJsonObj = null;
         try {
@@ -47,7 +61,7 @@ public class WeatherService implements Callable<Map<String, Object>> {
                 map.put("current temperature", temp+" "+"kelvin");
             } else {
                 map.put("status", "false");
-                map.put("Error Message", "Error fetching data from API");
+                map.put("Error", "Error fetching data from API");
             }
         } catch (JSONException e) {
             e.printStackTrace();
